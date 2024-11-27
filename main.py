@@ -44,11 +44,11 @@ def chime_on_activate(file, chime, predictions, threshold):
             audio_clip = audio_clip.overlay(chime_clip, position = (i/Ty)*audio_clip.duration_seconds*1000)
             consecutive_timesteps = 0
     
-    audio_clip.export('chime_output.wav', format = 'wav')
+    output_file = file.split('.wav')[0].split('/')[-1]
+    audio_clip.export(f'{output_file}_output.wav', format = 'wav')
 
 def main(file, chime):
     predictions = detect_triggerword(file)
     chime_on_activate(file, chime, predictions, 0.5)
-    IPython.display.Audio(f'./{file.split('.wav')[0]}_output.wav')
 
 main(file, chime)
