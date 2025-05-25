@@ -1,5 +1,4 @@
 import matplotlib.pyplot as plt
-from pydub import AudioSegment
 from scipy.io import wavfile
 
 def get_wav_info(wav_file):
