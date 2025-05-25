@@ -1,0 +1,35 @@
+[build]
+  # This command is run during the build process.
+  command = "echo 'Build command finished. Netlify will now process functions.'"
+  publish = "static"
+
+  # Tell Netlify where your serverless function files are located.
+  functions = "."
+
+# This section sets up a redirect to make your Gradio app accessible
+# at a cleaner URL, e.g., yoursite.netlify.app/app
+# instead of the longer /.netlify/functions/frontend URL.
+[[redirects]]
+  # The path users will visit in their browser:
+  from = "/app/*"
+
+  # The Netlify function to route this path to.
+  # IMPORTANT: 'frontend' here must match the filename of your Python function
+  # (e.g., if your file is 'frontend.py', the function name is 'frontend').
+  # If your file is 'main.py', use '/.netlify/functions/main/:splat'.
+  to = "/.netlify/functions/frontend/:splat"
+
+  # Status 200 means this acts as a rewrite; the URL in the browser doesn't change.
+  status = 200
+
+  # force = true # Uncomment if you want this rule to apply even if a file exists at the 'from' path.
+
+# --- Python Version ---
+# It's good practice to ensure Netlify uses the Python version you developed with.
+# You can set this in the Netlify UI (Build & deploy > Environment > Environment variables)
+# Key: PYTHON_VERSION
+# Value: 3.9 (or 3.8, 3.10, 3.11, etc.)
+#
+# Alternatively, you can create a file named '.python-version' (exactly that name)
+# in the root of your project, and put just the version number in it, e.g.:
+# 3.9
