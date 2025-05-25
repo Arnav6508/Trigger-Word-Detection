@@ -1,37 +1,53 @@
 from pydub import AudioSegment
 import numpy as np
+import tempfile
+import time
+
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-import IPython
 
-from model import prepare_model
+import os
+from dotenv import load_dotenv
+load_dotenv()
+threshold = float(os.getenv('threshold'))
+chime = os.getenv('chime_file')
+file = os.getenv('audio_test')
+
 from utils import match_target_amplitude, graph_spectrogram
-
-file = 'audio/test1.wav'
-chime = 'audio/chime.wav'
+from model import prepare_model
 model = prepare_model()
 
-def detect_triggerword(file):
-    plt.subplot(2,1,1)
-    audio_clip = AudioSegment.from_wav(file)
-    audio_clip = match_target_amplitude(audio_clip, -20.0)
-    file_handle = audio_clip.export('temp.wav', format = 'wav')
-    filename = 'temp.wav'
 
-    x = graph_spectrogram(filename)
+def detect_triggerword(file):
+    fig, (ax1, ax2) = plt.subplots(2,1)
+    audio_clip = AudioSegment.from_wav(file)
+    normalized_audio_clip = match_target_amplitude(audio_clip, -20.0)
+
+    with tempfile.NamedTemporaryFile(suffix=".wav", delete=True) as temp_file_for_spectrogram:
+        normalized_audio_clip.export(temp_file_for_spectrogram.name, format='wav')
+        plt.sca(ax1) # Set current axes to ax1 BEFORE graph_spectrogram plots
+        x = graph_spectrogram(temp_file_for_spectrogram.name)
+        ax1.set_title("Audio Spectrogram")
+
     # the spectrogram outputs (freqs, Tx) and we want (Tx, freqs) to input into the model
     x  = x.swapaxes(0,1)
     x = np.expand_dims(x, axis=0)
+
     predictions = model.predict(x)
-    plt.xlim(0, 50)
 
-    plt.subplot(2,1,2)
-    plt.plot(predictions[0,:,0])
-    plt.ylabel('probability')
-    plt.show()
-    return predictions
+    ax1.set_xlim(0, 50)
 
-def chime_on_activate(file, chime, predictions, threshold):
-    audio_clip = AudioSegment.from_wav(file)
+    ax2.plot(predictions[0,:,0])
+    ax2.set_ylabel('Probability')
+    ax2.set_xlabel('Time Steps')
+    ax2.set_title('Trigger Word Detection Probabilities')
+    fig.tight_layout()
+
+    return predictions, fig
+
+def chime_on_activate(input_file, output_file, chime, predictions):
+    audio_clip = AudioSegment.from_wav(input_file)
     chime_clip = AudioSegment.from_wav(chime)
 
     Ty = predictions.shape[1]
@@ -41,14 +57,22 @@ def chime_on_activate(file, chime, predictions, threshold):
         consecutive_timesteps += 1
         if predictions[0,i,0] < threshold: consecutive_timesteps = 0
         elif consecutive_timesteps>20:
+            print('trigger word detected at', (i/Ty)*audio_clip.duration_seconds, 'seconds')
             audio_clip = audio_clip.overlay(chime_clip, position = (i/Ty)*audio_clip.duration_seconds*1000)
             consecutive_timesteps = 0
     
-    output_file = file.split('.wav')[0].split('/')[-1]
-    audio_clip.export(f'{output_file}_output.wav', format = 'wav')
+    audio_clip.export(output_file, format = 'wav')
 
-def main(file, chime):
-    predictions = detect_triggerword(file)
-    chime_on_activate(file, chime, predictions, 0.5)
+def model_inference(input_file, chime = False):
+    if not os.path.exists('outputs'):
+        os.makedirs('outputs')
+    timestamp = int(time.time() * 1000)
+    output_file = 'outputs/' + input_file.split('.wav')[0].split('/')[-1] + f'_output_{timestamp}.wav'
 
-main(file, chime)
+    predictions, fig = detect_triggerword(input_file)
+    chime_on_activate(input_file, output_file, chime, predictions)
+    
+    return output_file, fig
+
+if __name__ == '__main__':
+    model_inference(file, chime)
