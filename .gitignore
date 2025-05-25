@@ -2,3 +2,4 @@ model.h5
 .env
 audio
 __pycache__
+outputs
