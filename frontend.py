@@ -3,7 +3,7 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 
-from main import model_inference
+from inference import model_inference
 from utils import convert_to_wav
 
 # --- App Configuration ---
