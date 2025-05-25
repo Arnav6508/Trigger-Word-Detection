@@ -1,4 +1,8 @@
 import gradio as gr
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+
 import os
 from dotenv import load_dotenv
 load_dotenv()
@@ -43,6 +47,11 @@ def run_model_on_audio(input_audio_path):
         status_message = f"An unexpected error occurred: {str(e)}"
         print(status_message)
 
+    if not isinstance(plot_fig, plt.Figure) and plot_fig is not None:
+        print(f"Warning: plot_fig is not a Figure object before final return. Type: {type(plot_fig)}. Setting to None.")
+        if hasattr(plot_fig, 'close') and callable(getattr(plot_fig, 'close')): plt.close(plot_fig) # Try to close if it's a figure
+        plot_fig = None
+
     return output_audio_file, plot_fig, status_message
 
 # --- Gradio Interface Definition ---
@@ -60,11 +69,12 @@ iface = gr.Interface(
     ],
     title=APP_TITLE,
     description=APP_DESCRIPTION,
-    allow_flagging="never",
+    flagging_options=None
 )
 
 # --- Run the App ---
 if __name__ == "__main__":
     print("Starting Gradio application...")
-    iface.launch()
+    server_port = int(os.environ.get('PORT', 7860))
+    iface.launch(server_name="0.0.0.0", server_port=server_port)
     print("Gradio app launched. Check your browser for the provided link.")
