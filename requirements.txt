@@ -1,0 +1,6 @@
+gradio == 5.20.0
+numpy == 1.26.4
+pydub == 0.25.1
+scipy == 1.11.4
+matplotlib == 3.9.3
+tensorflow == 2.18.0
