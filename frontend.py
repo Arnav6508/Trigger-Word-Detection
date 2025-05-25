@@ -1,8 +1,4 @@
 import gradio as gr
-import fastapi
-import uvicorn
-from mangum import Mangum
-
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -76,21 +72,9 @@ iface = gr.Interface(
     flagging_options=None
 )
 
-fastapi_app = fastapi.FastAPI()
-
-fastapi_app = gr.mount_gradio_app(
-    app=fastapi_app,          # The FastAPI app instance
-    blocks=iface,  # Your Gradio interface
-    path="/"                  # Mount Gradio at the root of this FastAPI app
-)
-
-lambda_handler = Mangum(fastapi_app)
-
 
 # --- Run the App ---
 if __name__ == "__main__":
     print("Starting application...")
-    port = int(os.getenv("PORT", "8000"))
-    # Host "0.0.0.0" makes it accessible externally if needed (e.g., in a Docker container)
-    uvicorn.run(fastapi_app, host="0.0.0.0", port=port)
+    iface.launch(share = True)
     print("App launched. Check your browser for the provided link.")
